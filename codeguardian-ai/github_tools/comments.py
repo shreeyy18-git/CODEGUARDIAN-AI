@@ -67,6 +67,7 @@ def format_review_comment(
     issues: list[Any] | None = None,
     review_id: int | None = None,
     scanner_findings_count: int = 0,
+    agent_findings: dict[str, int] | None = None,
 ) -> str:
     """Build the markdown body for a PR review comment.
 
@@ -80,13 +81,15 @@ def format_review_comment(
     summary:
         Human-readable review summary (markdown).
     issues:
-        Optional list of :class:`database.models.Issue` (or any object
-        with ``agent``, ``severity``, ``title``, ``file``, ``line``,
-        ``suggestion`` attributes).  Rendered as a markdown table.
+        Optional list of dicts with ``agent``, ``severity``, ``title``,
+        ``file``, ``line``, ``suggestion`` keys. Rendered as a table.
     review_id:
         Optional database review ID (for the "details" link).
     scanner_findings_count:
         Number of static-analysis findings (Semgrep/Bandit/Ruff).
+    agent_findings:
+        Dict mapping agent names to finding count, e.g.
+        ``{"security": 0, "bug": 0, "performance": 0, "quality": 2, "architecture": 0}``.
 
     Returns
     -------
@@ -96,7 +99,6 @@ def format_review_comment(
     emoji = _VERDICT_EMOJI.get(verdict, "❓")
     score_pct = round(score * 100)
 
-    # Verdict colour bar.
     lines: list[str] = [
         COMMENT_MARKER,
         "",
@@ -110,11 +112,9 @@ def format_review_comment(
         lines.append(f"> 📋 Review ID: `{review_id}`")
         lines.append("")
 
-    # Summary section.
-    if summary:
-        lines.append("### Summary")
-        lines.append("")
-        lines.append(summary)
+    # Agent summary table.
+    if agent_findings:
+        lines.extend(_format_agent_summary(agent_findings))
         lines.append("")
 
     # Scanner findings count.
@@ -123,6 +123,14 @@ def format_review_comment(
             f"🔍 **Static analysis:** {scanner_findings_count} finding(s) "
             "from Semgrep / Bandit / Ruff."
         )
+        lines.append("")
+
+    # AI Summary — strip any duplicated header lines from the LLM report.
+    if summary:
+        cleaned = _strip_duplicated_headers(summary)
+        lines.append("### AI Summary")
+        lines.append("")
+        lines.append(cleaned)
         lines.append("")
 
     # Issues table.
@@ -137,6 +145,58 @@ def format_review_comment(
         "review platform.*"
     )
     return "\n".join(lines)
+
+
+def _strip_duplicated_headers(text: str) -> str:
+    """Remove duplicated review headers from the LLM-generated report."""
+    lines = text.splitlines()
+    filtered = [
+        l for l in lines
+        if not l.startswith("# ") and not l.startswith("## 🔍")
+        and "CodeGuardian AI Review" not in l
+        and not l.startswith("**Merge Recommendation:")
+        and not l.startswith("**Overall Risk Score:")
+    ]
+    return "\n".join(filtered).strip()
+
+
+_AGENT_EMOJI: dict[str, str] = {
+    "security": "🔒",
+    "bug": "🐛",
+    "performance": "⚡",
+    "quality": "🔧",
+    "architecture": "🏗️",
+}
+
+_AGENT_LABELS: dict[str, str] = {
+    "security": "Security",
+    "bug": "Bug Detection",
+    "performance": "Performance",
+    "quality": "Code Quality",
+    "architecture": "Architecture",
+}
+
+
+def _format_agent_summary(agent_findings: dict[str, int]) -> list[str]:
+    """Build the agent summary table section."""
+    lines = [
+        "### Agent Summary",
+        "",
+        "| Agent | Findings | Status |",
+        "|-------|----------|--------|",
+    ]
+    total = 0
+    for agent in ["security", "bug", "performance", "quality", "architecture"]:
+        count = agent_findings.get(agent, 0)
+        total += count
+        emoji = _AGENT_EMOJI.get(agent, "•")
+        label = _AGENT_LABELS.get(agent, agent.title())
+        if count == 0:
+            status = "✅ Clear"
+        else:
+            status = f"⚠️ {count} issue(s)"
+        lines.append(f"| {emoji} {label} | {count} | {status} |")
+    return lines
 
 
 def _format_issues_table(issues: list[Any]) -> list[str]:

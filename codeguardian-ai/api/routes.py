@@ -238,6 +238,7 @@ def run_review_pipeline(event: PullRequestEvent) -> dict[str, Any]:
         )
 
         # ── 6. Post / update PR comment ──────────────────────────────
+        agent_findings = _compute_agent_finding_counts(final_state)
         _post_review_comment(
             repo_full=repo_full,
             pr_number=pr_number,
@@ -247,6 +248,7 @@ def run_review_pipeline(event: PullRequestEvent) -> dict[str, Any]:
             review_id=review_id,
             scanner_count=scanner_count,
             issues=consensus_findings,
+            agent_findings=agent_findings,
         )
 
         # ── 7. Complete check run ────────────────────────────────────
@@ -388,6 +390,20 @@ def _persist_review(
     return review_id
 
 
+def _compute_agent_finding_counts(state: dict[str, Any]) -> dict[str, int]:
+    """Extract per-agent finding counts from the LangGraph final state."""
+    agents = ["security", "bug", "performance", "quality", "architecture"]
+    counts: dict[str, int] = {}
+    for agent in agents:
+        key = f"{agent}_findings"
+        findings = state.get(key, [])
+        if isinstance(findings, list):
+            counts[agent] = len(findings)
+        else:
+            counts[agent] = 0
+    return counts
+
+
 def _post_review_comment(
     *,
     repo_full: str,
@@ -398,6 +414,7 @@ def _post_review_comment(
     review_id: int,
     scanner_count: int,
     issues: list[dict[str, Any]],
+    agent_findings: dict[str, int] | None = None,
 ) -> None:
     """Format and post/update the PR review comment."""
     try:
@@ -405,9 +422,10 @@ def _post_review_comment(
             verdict=verdict,
             score=score,
             summary=summary[:500] if summary else "",
-            issues=None,  # issues are in the report summary already
+            issues=issues,
             review_id=review_id,
             scanner_findings_count=scanner_count,
+            agent_findings=agent_findings,
         )
         update_or_post_comment(repo_full, pr_number, body)
     except Exception as exc:
