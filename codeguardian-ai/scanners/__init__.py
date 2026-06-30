@@ -1,0 +1,1 @@
+"""Static analysis scanners: Semgrep, Bandit, Ruff, and result parser."""

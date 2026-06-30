@@ -1,0 +1,32 @@
+# ── CodeGuardian AI — Docker Compose ────────────────────────────────────
+# Run:  docker compose up --build
+# -----------------------------------------------------------------------
+
+services:
+  codeguardian:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codeguardian-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite:///./review.db
+    volumes:
+      # Persist the SQLite database across container restarts
+      - db_data:/app/review.db
+      # Persist generated review reports
+      - reports_data:/app/reports
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  db_data:
+  reports_data:

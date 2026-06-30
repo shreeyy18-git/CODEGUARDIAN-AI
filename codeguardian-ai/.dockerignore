@@ -1,0 +1,47 @@
+# ── CodeGuardian AI — .dockerignore ─────────────────────────────────────
+# Prevents secrets, caches, and dev artifacts from entering the image.
+# -----------------------------------------------------------------------
+
+# Secrets — NEVER bake into an image
+.env
+.env.*
+!.env.example
+
+# Python caches & build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Database files (use a volume instead)
+*.db
+*.db-journal
+sqlite.db
+
+# Reports (generated at runtime, mounted as a volume)
+reports/*
+!reports/.gitkeep
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Version control
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md

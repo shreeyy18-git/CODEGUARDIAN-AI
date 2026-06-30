@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codeguardian-ai"
+version = "1.0.0"
+description = "Production-ready Multi-Agent AI Code Review Platform with Automated GitHub PR Gatekeeping"
+requires-python = ">=3.11"
+dependencies = [
+    "bandit>=1.7.0",
+    "fastapi>=0.115.0",
+    "google-generativeai>=0.7.0",
+    "groq>=0.11.0",
+    "httpx>=0.27.0",
+    "langchain-core>=0.3.0",
+    "langchain-google-genai>=1.0.0",
+    "langchain-groq>=0.1.0",
+    "langgraph>=0.2.0",
+    "langsmith>=0.1.0",
+    "ngrok>=1.4.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "pygithub>=2.0.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "python-dotenv>=1.0.0",
+    "ruff>=0.5.0",
+    "semgrep>=1.50.0",
+    "sqlalchemy>=2.0.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.scripts]
+codeguardian = "main:app"
+
+[tool.setuptools.packages.find]
+where = ["codeguardian-ai"]
+include = [
+    "agents*",
+    "api*",
+    "database*",
+    "evaluation*",
+    "github*",
+    "graph*",
+    "llm*",
+    "observability*",
+    "prompts*",
+    "scanners*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["codeguardian-ai/tests"]
+pythonpath = ["codeguardian-ai"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

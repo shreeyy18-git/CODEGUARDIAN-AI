@@ -1,0 +1,22 @@
+# Environment
+.env
+.env.example
+
+# Logs
+logs/
+
+# Database
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/

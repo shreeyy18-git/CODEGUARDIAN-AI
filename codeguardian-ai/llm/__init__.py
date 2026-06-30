@@ -1,0 +1,1 @@
+"""LLM client layer: Groq (primary), Gemini (fallback), and routing logic."""

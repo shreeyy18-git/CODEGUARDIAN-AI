@@ -1,0 +1,1 @@
+"""GitHub integration: webhook verification, REST API, comments, checks, diff parsing."""
