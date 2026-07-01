@@ -502,39 +502,85 @@ Each dataset includes:
 
 Five SQLAlchemy ORM models with cascade deletes:
 
-```
-┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
-│  Repository  │──1:N──│   PullRequest    │──1:N──│    Review    │
-│──────────────│       │──────────────────│       │──────────────│
-│ id (PK)      │       │ id (PK)          │       │ id (PK)      │
-│ name         │       │ repository_id(FK)│       │ pr_id (FK)   │
-│ owner        │       │ number           │       │ overall_score│
-│ created_at   │       │ title            │       │ risk_level   │
-└──────────────┘       │ head_sha         │       │ summary      │
-                       │ base_ref         │       │ review_time  │
-                       │ created_at       │       │ created_at   │
-                       └──────────────────┘       └──────┬───────┘
-                                                         │ 1:N
-                                ┌────────────────────────┼──────────────┐
-                                │                        │              │
-                       ┌────────▼──────┐    ┌───────────▼──┐   ┌───────▼──────┐
-                       │     Issue     │    │  Evaluation  │   │  AgentLog   │
-                       │───────────────│    │──────────────│   │──────────────│
-                       │ id (PK)       │    │ id (PK)      │   │ id (PK)      │
-                       │ review_id(FK) │    │ review_id(FK)│   │ review_id(FK)│
-                       │ agent         │    │ confidence   │   │ agent_name   │
-                       │ severity      │    │ hallucination│   │ model        │
-                       │ title         │    │ duplicate_rate│  │ fell_back    │
-                       │ file          │    │ quality_score│   │ latency_ms   │
-                       │ line          │    │ created_at   │   │ token_usage  │
-                       │ description   │    └──────────────┘   │ created_at   │
-                       │ suggestion    │                       └──────────────┘
-                       │ category      │
-                       │ confidence    │
-                       │ created_at    │
-                       └───────────────┘
-```
+# My Project
 
+This is a project about something awesome.
+
+## Database Schema
+
+Here is the Entity-Relationship diagram for the database:
+
+```mermaid
+erDiagram
+    Repository ||--o{ PullRequest : "has"
+    PullRequest ||--o{ Review : "generates"
+    Review ||--o{ Issue : "contains"
+    Review ||--o{ Evaluation : "has"
+    Review ||--o{ AgentLog : "logs"
+
+    Repository {
+        int id PK
+        string name
+        string owner
+        datetime created_at
+    }
+
+    PullRequest {
+        int id PK
+        int repository_id FK
+        int number
+        string title
+        string head_sha
+        string base_ref
+        datetime created_at
+    }
+
+    Review {
+        int id PK
+        int pr_id FK
+        float overall_score
+        string risk_level
+        text summary
+        datetime review_time
+        datetime created_at
+    }
+
+    Issue {
+        int id PK
+        int review_id FK
+        string agent
+        string severity
+        string title
+        string file
+        int line
+        text description
+        text suggestion
+        string category
+        float confidence
+        datetime created_at
+    }
+
+    Evaluation {
+        int id PK
+        int review_id FK
+        float confidence
+        float hallucination
+        float duplicate_rate
+        float quality_score
+        datetime created_at
+    }
+
+    AgentLog {
+        int id PK
+        int review_id FK
+        string agent_name
+        string model
+        boolean fell_back
+        int latency_ms
+        int token_usage
+        datetime created_at
+    }
+```
 **Cascade rules:** Deleting a Repository cascades to all PullRequests →
 Reviews → Issues, Evaluations, and AgentLogs.
 
