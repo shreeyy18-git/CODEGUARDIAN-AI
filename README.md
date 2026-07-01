@@ -76,44 +76,43 @@ fan-out / fan-in pattern. Five specialist agents run in **parallel**,
 their findings are merged by the consensus agent, and then three agents run
 **sequentially** to produce the final verdict and report.
 
-```mermaid
-flowchart TD
-    START([START]) --> load_pr["load_pr<br/><i>derive file_tree from changed_files</i>"]
-    load_pr --> static_analysis["static_analysis<br/><i>Semgrep + Bandit + Ruff</i>"]
-    static_analysis --> router["router<br/><i>decide which agents to run</i>"]
-
-    router -.->|"always"| security["🔒 security_agent<br/><i>vulnerabilities</i>"]
-    router -.->|"always"| bug["🐛 bug_agent<br/><i>logic errors</i>"]
-    router -.->|"always"| quality["🔧 quality_agent<br/><i>style/conventions</i>"]
-    router -.->|"if loops/DB/large data"| performance["⚡ performance_agent<br/><i>hotspots</i>"]
-    router -.->|"if new files/imports/refactor"| architecture["🏗️ architecture_agent<br/><i>design issues</i>"]
-
-    security --> consensus
-    bug --> consensus
-    quality --> consensus
-    performance --> consensus
-    architecture --> consensus
-
-    consensus["🤝 consensus_agent<br/><i>merge + dedupe + prioritize</i>"]
-    consensus --> risk["📊 risk_agent<br/><i>score = 0.5·sec + 0.3·maint + 0.2·perf</i>"]
-    risk --> report["📝 report_agent<br/><i>generate markdown review</i>"]
-    report --> END([END])
-
-    style security fill:#1a3a5c,stroke:#0a1a2e,color:#fff
-    style bug fill:#1a3a5c,stroke:#0a1a2e,color:#fff
-    style quality fill:#1a3a5c,stroke:#0a1a2e,color:#fff
-    style performance fill:#b8860b,stroke:#8b6508,color:#fff
-    style architecture fill:#b8860b,stroke:#8b6508,color:#fff
-    style consensus fill:#006400,stroke:#004400,color:#fff
-    style risk fill:#006400,stroke:#004400,color:#fff
-    style report fill:#006400,stroke:#004400,color:#fff
-    style START fill:#0000cd,stroke:#00008b,color:#fff
-    style END fill:#0000cd,stroke:#00008b,color:#fff
 ```
-
-> **Legend:** 🔵 Always-on agents (security, bug, quality) · 🟡 Conditional agents
-> (performance, architecture) · 🟢 Output agents (consensus, risk, report) ·
-> 🔷 Pipeline boundaries (START, END)
+                         ┌──────────────────┐
+                         │   load_pr_node    │  ← loads PR metadata + diff
+                         └────────┬──────────┘
+                                  │
+                         ┌────────▼──────────┐
+                         │ static_analysis   │  ← Semgrep + Bandit + Ruff
+                         └────────┬──────────┘
+                                  │
+                         ┌────────▼──────────┐
+                         │   router_node     │  ← decides which agents to run
+                         └────────┬──────────┘
+                                  │
+              ┌───────────────────┼───────────────────┐
+              │                   │                   │
+     ┌────────▼──────┐  ┌────────▼──────┐  ┌────────▼──────┐
+     │ security_node │  │   bug_node    │  │ perf_node     │
+     └────────┬──────┘  └────────┬──────┘  └────────┬──────┘
+              │                   │                   │
+     ┌────────▼──────┐  ┌────────▼──────┐            │
+     │ quality_node  │  │ arch_node     │            │
+     └────────┬──────┘  └────────┬──────┘            │
+              │                   │                   │
+              └───────────────────┼───────────────────┘
+                                  │
+                         ┌────────▼──────────┐
+                         │  consensus_node   │  ← merge + deduplicate
+                         └────────┬──────────┘
+                                  │
+                         ┌────────▼──────────┐
+                         │    risk_node      │  ← compute risk score
+                         └────────┬──────────┘
+                                  │
+                         ┌────────▼──────────┐
+                         │   report_node     │  ← generate markdown report
+                         └───────────────────┘
+```
 
 The graph state is defined by [`CodeGuardianState`](codeguardian-ai/graph/state.py:19),
 a `TypedDict` with `Annotated[list[dict], operator.add]` reducers that

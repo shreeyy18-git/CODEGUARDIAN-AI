@@ -81,24 +81,20 @@ flowchart TD
     START([START]) --> load_pr["load_pr<br/><i>derive file_tree from changed_files</i>"]
     load_pr --> static_analysis["static_analysis<br/><i>Semgrep + Bandit + Ruff</i>"]
     static_analysis --> router["router<br/><i>decide which agents to run</i>"]
-
     router -.->|"always"| security["🔒 security_agent<br/><i>vulnerabilities</i>"]
     router -.->|"always"| bug["🐛 bug_agent<br/><i>logic errors</i>"]
     router -.->|"always"| quality["🔧 quality_agent<br/><i>style/conventions</i>"]
     router -.->|"if loops/DB/large data"| performance["⚡ performance_agent<br/><i>hotspots</i>"]
     router -.->|"if new files/imports/refactor"| architecture["🏗️ architecture_agent<br/><i>design issues</i>"]
-
     security --> consensus
     bug --> consensus
     quality --> consensus
     performance --> consensus
     architecture --> consensus
-
     consensus["🤝 consensus_agent<br/><i>merge + dedupe + prioritize</i>"]
     consensus --> risk["📊 risk_agent<br/><i>score = 0.5·sec + 0.3·maint + 0.2·perf</i>"]
     risk --> report["📝 report_agent<br/><i>generate markdown review</i>"]
     report --> END([END])
-
     style security fill:#1a3a5c,stroke:#0a1a2e,color:#fff
     style bug fill:#1a3a5c,stroke:#0a1a2e,color:#fff
     style quality fill:#1a3a5c,stroke:#0a1a2e,color:#fff
@@ -110,10 +106,6 @@ flowchart TD
     style START fill:#0000cd,stroke:#00008b,color:#fff
     style END fill:#0000cd,stroke:#00008b,color:#fff
 ```
-
-> **Legend:** 🔵 Always-on agents (security, bug, quality) · 🟡 Conditional agents
-> (performance, architecture) · 🟢 Output agents (consensus, risk, report) ·
-> 🔷 Pipeline boundaries (START, END)
 
 The graph state is defined by [`CodeGuardianState`](codeguardian-ai/graph/state.py:19),
 a `TypedDict` with `Annotated[list[dict], operator.add]` reducers that
