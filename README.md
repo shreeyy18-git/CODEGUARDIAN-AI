@@ -239,41 +239,9 @@ degrades gracefully.
 [`build_graph()`](codeguardian-ai/graph/workflow.py:63) compiles the
 LangGraph `StateGraph` and the workflow is invoked with the initial state:
 
+<img width="3975" height="3828" alt="deepseek_mermaid_20260701_4317ef" src="https://github.com/user-attachments/assets/9ae9403f-ad8c-4a4b-9076-5e74357fd4bf" />
 
-flowchart TD
-    START([START]) --> load_pr["load_pr<br/><i>derive file_tree from changed_files</i>"]
-    load_pr --> static_analysis["static_analysis<br/><i>Semgrep + Bandit + Ruff</i>"]
-    static_analysis --> router["router<br/><i>decide which agents to run</i>"]
-
-    router -.->|"always"| security["🔒 security_agent<br/><i>vulnerabilities</i>"]
-    router -.->|"always"| bug["🐛 bug_agent<br/><i>logic errors</i>"]
-    router -.->|"always"| quality["🔧 quality_agent<br/><i>style/conventions</i>"]
-    router -.->|"if loops/DB/large data"| performance["⚡ performance_agent<br/><i>hotspots</i>"]
-    router -.->|"if new files/imports/refactor"| architecture["🏗️ architecture_agent<br/><i>design issues</i>"]
-
-    security --> consensus
-    bug --> consensus
-    quality --> consensus
-    performance --> consensus
-    architecture --> consensus
-
-    consensus["🤝 consensus_agent<br/><i>merge + dedupe + prioritize</i>"]
-    consensus --> risk["📊 risk_agent<br/><i>score = 0.5·sec + 0.3·maint + 0.2·perf</i>"]
-    risk --> report["📝 report_agent<br/><i>generate markdown review</i>"]
-    report --> END([END])
-
-    style security fill:#1a3a5c,stroke:#0a1a2e,color:#fff
-    style bug fill:#1a3a5c,stroke:#0a1a2e,color:#fff
-    style quality fill:#1a3a5c,stroke:#0a1a2e,color:#fff
-    style performance fill:#b8860b,stroke:#8b6508,color:#fff
-    style architecture fill:#b8860b,stroke:#8b6508,color:#fff
-    style consensus fill:#006400,stroke:#004400,color:#fff
-    style risk fill:#006400,stroke:#004400,color:#fff
-    style report fill:#006400,stroke:#004400,color:#fff
-    style START fill:#0000cd,stroke:#00008b,color:#fff
-    style END fill:#0000cd,stroke:#00008b,color:#fff
-
-
+  
 The five specialist agents run in parallel (fan-out), each receiving the
 full state. Their findings are accumulated via the `operator.add` reducer.
 Then consensus → risk → report run sequentially (fan-in).
