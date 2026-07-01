@@ -120,7 +120,7 @@ def fetch_pr_diff(repo_full_name: str, pr_number: int) -> str:
         headers: dict[str, str] = {}
         if settings.github_token:
             headers["Authorization"] = f"Bearer {settings.github_token}"
-        resp = httpx.get(diff_url, headers=headers, timeout=30)
+        resp = httpx.get(diff_url, headers=headers, timeout=30, follow_redirects=True)
         if resp.status_code == 200:
             return resp.text
         _log.warning(

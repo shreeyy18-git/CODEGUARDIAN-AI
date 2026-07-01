@@ -14,7 +14,7 @@ detect it across edits.
 
 Usage::
 
-    from github.comments import format_review_comment, update_or_post_comment
+    from github_tools.comments import format_review_comment, update_or_post_comment
 
     body = format_review_comment(verdict="APPROVE", score=0.92, issues=[...])
     update_or_post_comment("owner/repo", 42, body)
@@ -67,6 +67,7 @@ def format_review_comment(
     issues: list[Any] | None = None,
     review_id: int | None = None,
     scanner_findings_count: int = 0,
+    agent_findings: dict[str, int] | None = None,
 ) -> str:
     """Build the markdown body for a PR review comment.
 
@@ -87,6 +88,10 @@ def format_review_comment(
         Optional database review ID (for the "details" link).
     scanner_findings_count:
         Number of static-analysis findings (Semgrep/Bandit/Ruff).
+    agent_findings:
+        Optional mapping of agent name → finding count (e.g.
+        ``{"security": 2, "bug": 0, "performance": 1, ...}``).
+        Rendered as a compact breakdown line.
 
     Returns
     -------
@@ -115,6 +120,16 @@ def format_review_comment(
         lines.append("### Summary")
         lines.append("")
         lines.append(summary)
+        lines.append("")
+
+    # Agent findings breakdown.
+    if agent_findings:
+        parts: list[str] = []
+        for agent_name, count in agent_findings.items():
+            parts.append(f"{agent_name}: {count}")
+        lines.append(
+            "🤖 **Agent findings:** " + " · ".join(parts)
+        )
         lines.append("")
 
     # Scanner findings count.
